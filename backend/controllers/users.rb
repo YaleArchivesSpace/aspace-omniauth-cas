@@ -2,6 +2,7 @@
 
 require 'aspace_logger'
 require 'omniauth-cas'
+require 'securerandom'
 #require 'pp'
 
 class ArchivesSpaceService < Sinatra::Base
@@ -50,7 +51,16 @@ class ArchivesSpaceService < Sinatra::Base
       raise ArgumentError.new("Provider mismatch: '#{params[:provider]}' != 'cas'")
 #   We only allow users we know about to log in (essentially authorization).
     elsif (!(user = User.find(:username => params[:username])))
-      raise NotFoundException.new("Unknown user '#{params[:username]}'")
+      if (AppConfig[:omniauthCas][:createUnknownUsers])
+        # go ahead and create a stub account with this username
+        username = Username.value(params[:username])
+        user = User.create_from_json(JSONModel(:user).from_hash("username" => username, "name" => username), :source => "cas") # source used to be "local"
+        pwd = SecureRandom.urlsafe_base64(32)
+        DBAuth.set_password(username, pwd)
+        logger.info("omniauthCas/backend:   user '#{username}' was created from json with a random local password")
+      else
+        raise NotFoundException.new("Unknown user '#{params[:username]}'")
+      end
     end
     ####logger.debug("omniauthCas/backend:   user.username='#{user.username}'")####
 

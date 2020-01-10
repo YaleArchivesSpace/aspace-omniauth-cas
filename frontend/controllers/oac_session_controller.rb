@@ -52,6 +52,7 @@ class OacSessionController < SessionController
 
     backend_session = ASUtils.json_parse(response.body)
     User.establish_session(self, backend_session, params[:username])
+    session[:provider] = params[:provider] # track how the user authenticated
 
 #   From frontend/controller/session.rb (#become_user).
     redirect_to :controller => :welcome, :action => :index

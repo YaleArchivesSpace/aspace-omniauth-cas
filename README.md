@@ -1,6 +1,29 @@
 ArchivesSpace authentication with OmniAuth/CAS
 ==================================
 
+Yale-specific notes
+------------
+
+This fork targets ArchivesSpace version 2.4.1. The config.rb should have a section
+that looks as follows:
+
+```
+AppConfig[:omniauthCas] = {
+                :provider => {
+                        :url                  => 'https://secure.its.yale.edu',
+                        :login_url            => '/cas/login',
+                        :service_validate_url => '/cas/serviceValidate',
+                        :host                 => 'secure.its.yale.edu',
+                        :ssl                  => true,
+                },
+                :frontendUidProc    => lambda { |hash| hash['uid'] },
+                :backendUidProc     => lambda { |hash| hash['user'] },
+                :backendEmailProc   => lambda { |hash| '' },
+                :logoutUrlPath      => '/cas/logout',
+                :createUnknownUsers => true,
+}
+```
+
 **NOTE** that this is the Harvard-specific fork, which uses the email address of the
 authenticated user to identify the user within ArchivesSpace
 

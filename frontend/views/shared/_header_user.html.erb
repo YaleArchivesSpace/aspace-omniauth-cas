@@ -18,7 +18,7 @@
   <li class="dropdown system-menu">
     <a href="#" class="dropdown-toggle" data-toggle="dropdown"><%= I18n.t("navbar.global_admin") %> <b class="caret"></b></a>
     <ul class="dropdown-menu">
-      <% if user_can?('manage_repository') %>
+      <% if user_can?('update_enumeration_record') %>
         <li><%= link_to I18n.t("navbar.manage_enumerations"), :controller => :enumerations, :action => :index %></li>
       <% end %>
       <% if user_can?('update_container_profile_record') %>
@@ -28,7 +28,7 @@
         <li><%= link_to I18n.t("navbar.manage_location_profiles"), :controller => :location_profiles, :action => :index %></li>
       <% end %>
 
-      <% if user_can?('manage_repository') || user_can?('update_container_profile_record') || user_can?('manage_location_profile_record') %>
+      <% if user_can?('update_enumeration_record') || user_can?('update_container_profile_record') || user_can?('manage_location_profile_record') %>
         <li class="divider"></li>
       <% end %>
 
@@ -74,25 +74,39 @@
         <a class="btn btn-default navbar-btn dropdown-toggle last" data-toggle="dropdown" href="#"><span class="caret"></span></a>
         <ul class="dropdown-menu pull-right">
 
-          <li><%= link_to I18n.t("navbar.global_preferences"), :controller => :preferences, :action => :edit, :id => 0, :global => true %></li>
-          <% if session[:repo_id] %>
+          <% if user_can?('administer_system') %>
+            <li><%= link_to I18n.t("navbar.global_preferences"), :controller => :preferences, :action => :edit, :id => 0, :global => true %></li>
+          <% end %>
+          <% if user_can?('administer_system') || user_can?('manage_repository') %>
             <li><%= link_to I18n.t("navbar.user_repo_preferences"), :controller => :preferences, :action => :edit, :id => 0 %></li>
           <% end %>
+          <li><%= link_to I18n.t("navbar.repo_preferences"), :controller => :preferences, :action => :edit, :id => 0, :repo => true %></li>
           <li class="divider"></li>
 
           <% if user_can?('become_user') %>
             <li><%= link_to I18n.t("navbar.become-user"), :controller => "session", :action => "select_user" %></li>
           <% end %>
           <li><%= link_to I18n.t("navbar.logout"), :controller => "session",:action => "logout"%></li>
+	  <% if session[:provider] && 'cas'.casecmp(session[:provider]) == 0 %>
+            <li><%= link_to I18n.t("navbar.logout") + " from CAS", AppConfig[:frontend_proxy_prefix] + "auth/cas/logout" %></li>
+          <% end %>
         </ul>
       </div>
     </div>
   </li>
 <% else %>
   <li class="dropdown login-dropdown <% if params[:login] %>open<% end %>">
-    <a href="<%= AppConfig[:frontend_proxy_prefix] %>auth/cas"><%= I18n.t("navbar.login") %></a>
+    <a class="session-actions dropdown-toggle" href="#" data-toggle="dropdown"><%= I18n.t("navbar.login") %></a>
+    <div class="dropdown-menu" style="padding: 15px; padding-bottom: 0px;">
+       <span class="login">
+         <button class="btn btn-primary navbar-btn btn-default" onclick="window.location.href='<%= AppConfig[:frontend_proxy_prefix] %>auth/cas';" name="cas" id="cas">Yale NetID Login</button>
+       </span>
+       <p style="margin: 5px 0; text-align: center;">&#8212;&nbsp;Or Login Directly&nbsp;&#8212;</p>
+       <%= render_aspace_partial :partial => "shared/login" %>
+       <!--<p><a href="<%= AppConfig[:frontend_proxy_prefix] %>auth/cas">Yale NetID Login</a></p>-->
+       <% if AppConfig[:allow_user_registration] %>
+         <p><%= I18n.t "navbar.register_prefix" %> <%= link_to I18n.t("navbar.register"), {:controller => "users", :action => "new"}, :class => "boring-link" %></p>
+       <% end %>
+    </div>
   </li>
-  <% if AppConfig[:allow_user_registration] %>
-         <li><%= link_to (I18n.t("navbar.register_prefix") + " " +  I18n.t("navbar.register")), {:controller => "users", :action => "new"}, :class => "boring-link" %></li>
-  <% end %>
 <% end %>
