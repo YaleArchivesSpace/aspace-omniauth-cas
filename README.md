@@ -4,8 +4,9 @@ ArchivesSpace authentication with OmniAuth/CAS
 Yale-specific notes
 ------------
 
-This fork targets ArchivesSpace version 2.4.1. The config.rb should have a section
-that looks as follows:
+This fork is intended to use Yale's NetID rather than email address to identify
+users. It targets Yale's customized ArchivesSpace version 2.4.1.  The config.rb
+should have a section that looks as follows:
 
 ```
 AppConfig[:omniauthCas] = {
@@ -23,6 +24,9 @@ AppConfig[:omniauthCas] = {
                 :createUnknownUsers => true,
 }
 ```
+
+Original README
+-------------
 
 **NOTE** that this is the Harvard-specific fork, which uses the email address of the
 authenticated user to identify the user within ArchivesSpace
