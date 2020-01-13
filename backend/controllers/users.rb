@@ -42,9 +42,10 @@ class ArchivesSpaceService < Sinatra::Base
 
     logger = ASpaceLogger.new($stderr)
 #logger.debug("Got to endpoint with params: #{params.pretty_inspect}")
-    user      = nil
-    json_user = nil
-    session   = nil
+    user       = nil
+    json_user  = nil
+    session    = nil
+    cas_signup = false
 
 #   We can only support CAS authentication.
     if ('cas'.casecmp(params[:provider]) != 0)
@@ -58,6 +59,7 @@ class ArchivesSpaceService < Sinatra::Base
         pwd = SecureRandom.urlsafe_base64(32)
         DBAuth.set_password(username, pwd)
         logger.info("omniauthCas/backend:   user '#{username}' was created from json with a random local password")
+        cas_signup = true
       else
         raise NotFoundException.new("Unknown user '#{params[:username]}'")
       end
@@ -116,13 +118,31 @@ class ArchivesSpaceService < Sinatra::Base
     end
 
     if (session && json_user)
-      json_response({:session => session.id, :user => json_user})
+      json_response({:session => session.id, :user => json_user, :cas_signup => cas_signup})
     else
       json_response({:error => 'Login failed'}, 403)
     end
 
   end
  
+  Endpoint.post('/users/:id/update')
+    .description("Update a CAS user's account (logged-in user only)")
+    .params(["id", :id],
+            ["user", JSONModel(:user), "The updated record"])
+    .permissions([])            # permissions are enforced in the body for this one
+    .returns([200, :updated],
+             [400, :error]) \
+  do
+    user = User.get_or_die(params[:id])
+
+    # High security: update the user themselves.
+    raise AccessDeniedException.new if user.id != current_user.id or params[:user].username != current_user.username
+
+    params[:user].username = Username.value(params[:user].username)
+    user.update_from_json(params[:user])
+    updated_response(user, params[:user])
+  end
+
 # def fetch_username_from_email(email)
 #   username = nil
 #   begin

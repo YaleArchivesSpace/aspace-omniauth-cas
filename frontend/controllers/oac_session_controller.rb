@@ -54,8 +54,12 @@ class OacSessionController < SessionController
     User.establish_session(self, backend_session, params[:username])
     session[:provider] = params[:provider] # track how the user authenticated
 
-#   From frontend/controller/session.rb (#become_user).
-    redirect_to :controller => :welcome, :action => :index
+    if backend_session["cas_signup"]
+        redirect_to :action => :cas_signup
+    else
+    #   From frontend/controller/session.rb (#become_user).
+        redirect_to :controller => :welcome, :action => :index
+    end
 
   end
 
@@ -73,6 +77,26 @@ class OacSessionController < SessionController
 
     redirect_to logoutUrl.to_s
 
+  end
+
+  def cas_signup
+    @user = JSONModel(:user).from_hash(JSONModel::HTTP::get_json("/users/current-user"))
+    render :action => "cas_signup"
+  end
+
+  def update
+    @user = JSONModel(:user).from_hash(JSONModel::HTTP::get_json("/users/current-user"))
+    uri = JSONModel(:user).uri_for("#{@user.id}/update")
+    Rails.logger.debug("omniauthCas/frontend/update: CAS UPDATE :id=#{@user.id}")
+    updates = JSONModel(:user).from_hash(params[:user].to_hash)
+    response = JSONModel::HTTP.post_form(uri, :user => updates.to_json)
+    if (response.code != '200')
+      flash[:error] = I18n.t("user._frontend.messages.error_update")
+      redirect_to :action => :cas_signup
+    else
+      flash[:success] = I18n.t("user._frontend.messages.updated")
+      redirect_to :controller => :welcome, :action => :index
+    end
   end
 
   protected
