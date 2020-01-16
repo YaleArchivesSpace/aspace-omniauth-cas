@@ -14,4 +14,8 @@
 </fieldset>
 <%= javascript_tag do %>
   $("#user_name_").select();
+  $("form").submit(function(e) { if (!$.trim($("#user_name_").val())) {
+    $("#user_name_").select();
+    return false;
+  }});
 <% end %>

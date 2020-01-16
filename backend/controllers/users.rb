@@ -55,7 +55,7 @@ class ArchivesSpaceService < Sinatra::Base
       if (AppConfig[:omniauthCas][:createUnknownUsers])
         # go ahead and create a stub account with this username
         username = Username.value(params[:username])
-        user = User.create_from_json(JSONModel(:user).from_hash("username" => username, "name" => username), :source => "cas") # source used to be "local"
+        user = User.create_from_json(JSONModel(:user).from_hash("username" => username, "name" => username), :source => "CAS") # source used to be "local"
         pwd = SecureRandom.urlsafe_base64(32)
         DBAuth.set_password(username, pwd)
         logger.info("omniauthCas/backend:   user '#{username}' was created from json with a random local password")
@@ -87,9 +87,7 @@ class ArchivesSpaceService < Sinatra::Base
         raise ArgumentError.new("User mismatch: '#{params[:username]}' != '#{uid}'")
       end
 
-      json_user = JSONModel(:user).from_hash(:username => uid,
-                                             :name     => stv.user_info['name'] || uid,
-                                             :email    => email)
+      json_user = User.to_jsonmodel(User.find(:username => params[:username]))
 
 #     From backend/app/model/authentication_manager.rb:
       begin
